@@ -1,7 +1,7 @@
 package com.example.demo;
 
 import com.example.demo.handler.AbstractHandler;
-import com.example.demo.model.Request;
+import com.example.demo.model.RequestBean;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -21,7 +21,7 @@ public class Dispatcher {
         handlers.put(bodyType, handler);
     }
 
-    byte[] handle(Request req) {
+    byte[] handle(RequestBean req) {
         AbstractHandler handler = handlers.get(req.getMessage().payloadType());
         return handler == null ? new byte[0] : handler.handle(req);
     }

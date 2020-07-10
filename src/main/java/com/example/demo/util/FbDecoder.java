@@ -1,7 +1,7 @@
 package com.example.demo.util;
 
-import com.example.demo.fb.Message;
-import com.example.demo.model.Request;
+import com.example.demo.flatbuffer.FbMessage;
+import com.example.demo.model.RequestBean;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
@@ -16,14 +16,14 @@ public class FbDecoder extends ByteToMessageDecoder {
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
         byte[] bytes = new byte[in.readableBytes()];
         in.readBytes(bytes);
-        Message message = new Message();
+        FbMessage message = new FbMessage();
 
         try {
-            message = Message.getRootAsMessage(ByteBuffer.wrap(bytes));
+            message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(bytes));
         } catch (Exception ignored) {
 
         }
 
-        out.add(new Request(ctx.channel().id().toString(), message));
+        out.add(new RequestBean(ctx.channel().id().toString(), message));
     }
 }

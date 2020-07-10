@@ -1,12 +1,12 @@
 package com.example.demo.model;
 
-import com.example.demo.fb.Message;
+import com.example.demo.flatbuffer.FbMessage;
 
-public class Request {
+public class RequestBean extends AbstractBean {
     private String sid;
-    private Message message;
+    private FbMessage message;
 
-    public Request(String sid, Message message) {
+    public RequestBean(String sid, FbMessage message) {
         this.sid = sid;
         this.message = message;
     }
@@ -19,11 +19,11 @@ public class Request {
         this.sid = sid;
     }
 
-    public Message getMessage() {
+    public FbMessage getMessage() {
         return message;
     }
 
-    public void setMessage(Message message) {
+    public void setMessage(FbMessage message) {
         this.message = message;
     }
 }
