@@ -36,7 +36,7 @@ public class FieldPublisher {
     }
 
     public Flux<byte[]> subscribe() {
-        return fieldFlux.map(fieldBean -> FbConverter.field(fieldBean).getByteBuffer().array());
+        return fieldFlux.map(fieldBean -> FbConverter.toField(fieldBean).getByteBuffer().array());
     }
 
     void initField() {

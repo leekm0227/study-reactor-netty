@@ -12,7 +12,7 @@ import java.util.Optional;
 
 public final class FbConverter {
 
-    public static FbField field(FieldBean fieldBean) {
+    public static FbField toField(FieldBean fieldBean) {
         FlatBufferBuilder builder = new FlatBufferBuilder();
         int[] arrObject = new int[fieldBean.getObjects().size()];
 
@@ -40,7 +40,7 @@ public final class FbConverter {
         return (FbField) message.payload(new FbField());
     }
 
-    public static FbSignIn signIn(Account account) {
+    public static FbSignIn toSignIn(Account account) {
         FlatBufferBuilder builder = new FlatBufferBuilder();
         int pid = builder.createString(Optional.ofNullable(account.getPid()).orElse(""));
         int uid = builder.createString(Optional.ofNullable(account.getId()).orElse(""));
@@ -52,7 +52,7 @@ public final class FbConverter {
         return (FbSignIn) message.payload(new FbSignIn());
     }
 
-    public static FbCharacter character(Account account) {
+    public static FbCharacter toCharacter(Account account) {
         FlatBufferBuilder builder = new FlatBufferBuilder();
         int[] arrChar = new int[account.getCharacters().size()];
 

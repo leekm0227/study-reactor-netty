@@ -34,6 +34,6 @@ public class SignInHandler extends AbstractHandler<FbSignIn> {
                         .build()
         ));
 
-        return FbConverter.signIn(response).getByteBuffer().array();
+        return FbConverter.toSignIn(response).getByteBuffer().array();
     }
 }
