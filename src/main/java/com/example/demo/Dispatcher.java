@@ -37,7 +37,7 @@ public class Dispatcher {
 
     Flux<byte[]> handle(RequestBean req) {
         AbstractHandler<?> handler = handlers.get(req.getMessage().payloadType());
-        return Flux.just(handler == null ? new byte[0] : handler.handle(req))
+        return Flux.just(handler.handle(req))
                 .mergeWith(chatPublisher.subscribe(req.getSid()))
                 .mergeWith(fieldPublisher.subscribe());
     }

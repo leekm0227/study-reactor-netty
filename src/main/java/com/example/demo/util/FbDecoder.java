@@ -21,11 +21,12 @@ public class FbDecoder extends ByteToMessageDecoder {
         byte[] bytes = new byte[in.readableBytes()];
         in.readBytes(bytes);
 
-        logger.info("readable bytes : {}", in.readableBytes());
-
-        if (in.readableBytes() > 0) {
+        try {
             FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(bytes));
             out.add(new RequestBean(ctx.channel().id().toString(), message));
+        } catch (Exception e) {
+            logger.info("msg exception : {}", e.getLocalizedMessage());
+            throw new RuntimeException();
         }
     }
 }

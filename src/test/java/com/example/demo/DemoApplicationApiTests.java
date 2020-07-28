@@ -44,13 +44,13 @@ class DemoApplicationApiTests {
 
     @Test
     void testChat() {
-        chatPublisher.subscribe().subscribe(bytes -> {
+        chatPublisher.subscribe("test").subscribe(bytes -> {
             FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(bytes));
             FbChat chat = (FbChat) message.payload(new FbChat());
             System.out.println("test1 : " + chat.content());
         });
 
-        chatPublisher.subscribe().subscribe(bytes -> {
+        chatPublisher.subscribe("test").subscribe(bytes -> {
             FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(bytes));
             FbChat chat = (FbChat) message.payload(new FbChat());
             System.out.println("test2 : " + chat.content());

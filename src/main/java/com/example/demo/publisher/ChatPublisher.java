@@ -20,18 +20,14 @@ public class ChatPublisher {
     public void init() {
         chatPublisher = UnicastProcessor.create();
         chatFlux = chatPublisher.replay(1).autoConnect(0);
+        topicMap = new HashMap<>();
     }
 
     public void onNext(FbChat chat) {
         chatPublisher.onNext(chat);
     }
 
-    public Flux<byte[]> subscribe() {
-        return chatFlux.map(chat -> chat.getByteBuffer().array());
-    }
-
     public Flux<byte[]> subscribe(String sid) {
-        return chatFlux.map(chat -> topicMap.get(sid).stream().anyMatch(cid -> cid.equals(chat.cid())) ? chat.getByteBuffer().array() : new byte[0]);
+        return chatFlux.map(chat -> topicMap.containsKey(sid) && topicMap.get(sid).stream().anyMatch(cid -> cid.equals(chat.cid())) ? chat.getByteBuffer().array() : new byte[0]);
     }
-
 }

@@ -20,22 +20,14 @@ import java.util.concurrent.TimeUnit;
 import static org.springframework.test.util.AssertionErrors.assertTrue;
 
 
-//@ExtendWith(SpringExtension.class)
-//@SpringBootTest
-//@ContextConfiguration(classes = {DemoApplication.class, DemoServer.class}, initializers = ConfigFileApplicationContextInitializer.class)
 class DemoApplicationTests {
-
-//    @Autowired
-//    ApplicationContext context;
 
     @BeforeEach
     void before() {
-//        DemoServer server = context.getBean(DemoServer.class);
-//        server.run(null);
     }
 
     @Test
-    void test1() throws IOException, InterruptedException {
+    void testSocket() throws IOException, InterruptedException {
         InetSocketAddress hostAddress = new InetSocketAddress("localhost", 9999);
         SocketChannel client = SocketChannel.open(hostAddress);
 
@@ -50,9 +42,8 @@ class DemoApplicationTests {
         client.close();
     }
 
-
     @Test
-    void test() throws InterruptedException {
+    void testTcpClient() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         TcpClient client = TcpClient.create().port(9999);
         Connection conn = client.handle((in, out) -> {
