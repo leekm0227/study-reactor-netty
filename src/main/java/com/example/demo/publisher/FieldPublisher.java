@@ -30,7 +30,7 @@ public class FieldPublisher {
     }
 
     public void onNext(FieldBean fieldBean) {
-        System.out.println(fieldBean);
+        System.out.println("field : " + fieldBean);
         lastField = fieldBean;
         fieldPublisher.onNext(fieldBean);
     }

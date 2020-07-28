@@ -80,4 +80,18 @@ public final class FbConverter {
         FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(builder.sizedByteArray()));
         return (FbCharacter) message.payload(new FbCharacter());
     }
+
+    public static FbChat toChat(String cid, String oid, String content) {
+        FlatBufferBuilder builder = new FlatBufferBuilder();
+        int cidOffset = builder.createString(cid);
+        int oidOffset = builder.createString(oid);
+        int contentOffset = builder.createString(content);
+        int chatOffset = FbChat.createFbChat(builder, cidOffset, oidOffset, contentOffset);
+        int messageOffset = FbMessage.createFbMessage(builder, FbMethod.N, FbResult.S, FbPayload.FbChat, chatOffset);
+        builder.finish(messageOffset);
+
+        FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(builder.sizedByteArray()));
+        return (FbChat) message.payload(new FbChat());
+
+    }
 }

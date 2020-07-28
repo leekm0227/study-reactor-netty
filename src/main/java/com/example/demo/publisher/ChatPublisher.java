@@ -6,12 +6,15 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.UnicastProcessor;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 @Component
 public class ChatPublisher {
 
     private UnicastProcessor<FbChat> chatPublisher;
     private Flux<FbChat> chatFlux;
+    private HashMap<String, ArrayList<String>> topicMap;
 
     @PostConstruct
     public void init() {
@@ -25,6 +28,10 @@ public class ChatPublisher {
 
     public Flux<byte[]> subscribe() {
         return chatFlux.map(chat -> chat.getByteBuffer().array());
+    }
+
+    public Flux<byte[]> subscribe(String sid) {
+        return chatFlux.map(chat -> topicMap.get(sid).stream().anyMatch(cid -> cid.equals(chat.cid())) ? chat.getByteBuffer().array() : new byte[0]);
     }
 
 }

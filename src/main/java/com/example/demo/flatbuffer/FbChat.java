@@ -13,25 +13,31 @@ public final class FbChat extends Table {
   public void __init(int _i, ByteBuffer _bb) { __reset(_i, _bb); }
   public FbChat __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
-  public String oid() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
-  public ByteBuffer oidAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }
-  public ByteBuffer oidInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 4, 1); }
-  public String content() { int o = __offset(6); return o != 0 ? __string(o + bb_pos) : null; }
-  public ByteBuffer contentAsByteBuffer() { return __vector_as_bytebuffer(6, 1); }
-  public ByteBuffer contentInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 6, 1); }
+  public String cid() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
+  public ByteBuffer cidAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }
+  public ByteBuffer cidInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 4, 1); }
+  public String oid() { int o = __offset(6); return o != 0 ? __string(o + bb_pos) : null; }
+  public ByteBuffer oidAsByteBuffer() { return __vector_as_bytebuffer(6, 1); }
+  public ByteBuffer oidInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 6, 1); }
+  public String content() { int o = __offset(8); return o != 0 ? __string(o + bb_pos) : null; }
+  public ByteBuffer contentAsByteBuffer() { return __vector_as_bytebuffer(8, 1); }
+  public ByteBuffer contentInByteBuffer(ByteBuffer _bb) { return __vector_in_bytebuffer(_bb, 8, 1); }
 
   public static int createFbChat(FlatBufferBuilder builder,
+      int cidOffset,
       int oidOffset,
       int contentOffset) {
-    builder.startTable(2);
+    builder.startTable(3);
     FbChat.addContent(builder, contentOffset);
     FbChat.addOid(builder, oidOffset);
+    FbChat.addCid(builder, cidOffset);
     return FbChat.endFbChat(builder);
   }
 
-  public static void startFbChat(FlatBufferBuilder builder) { builder.startTable(2); }
-  public static void addOid(FlatBufferBuilder builder, int oidOffset) { builder.addOffset(0, oidOffset, 0); }
-  public static void addContent(FlatBufferBuilder builder, int contentOffset) { builder.addOffset(1, contentOffset, 0); }
+  public static void startFbChat(FlatBufferBuilder builder) { builder.startTable(3); }
+  public static void addCid(FlatBufferBuilder builder, int cidOffset) { builder.addOffset(0, cidOffset, 0); }
+  public static void addOid(FlatBufferBuilder builder, int oidOffset) { builder.addOffset(1, oidOffset, 0); }
+  public static void addContent(FlatBufferBuilder builder, int contentOffset) { builder.addOffset(2, contentOffset, 0); }
   public static int endFbChat(FlatBufferBuilder builder) {
     int o = builder.endTable();
     return o;

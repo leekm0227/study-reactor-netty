@@ -1,69 +1,78 @@
 package com.example.demo;
 
 
-import com.example.demo.domain.Account;
-import com.example.demo.domain.Character;
-import com.example.demo.flatbuffer.FbCharacter;
+import com.example.demo.flatbuffer.FbChat;
 import com.example.demo.flatbuffer.FbMessage;
-import com.example.demo.flatbuffer.FbMethod;
-import com.example.demo.flatbuffer.FbSignIn;
-import com.example.demo.handler.ActionHandler;
-import com.example.demo.handler.CharacterHandler;
-import com.example.demo.handler.SignInHandler;
 import com.example.demo.util.FbConverter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import reactor.core.publisher.Flux;
+import reactor.netty.Connection;
+import reactor.netty.tcp.TcpClient;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import static org.springframework.test.util.AssertionErrors.assertTrue;
 
 
-@SpringBootTest
-@ActiveProfiles("test")
+//@ExtendWith(SpringExtension.class)
+//@SpringBootTest
+//@ContextConfiguration(classes = {DemoApplication.class, DemoServer.class}, initializers = ConfigFileApplicationContextInitializer.class)
 class DemoApplicationTests {
 
-    @Autowired
-    ActionHandler actionHandler;
-
-    @Autowired
-    SignInHandler signInHandler;
-
-    @Autowired
-    CharacterHandler characterHandler;
+//    @Autowired
+//    ApplicationContext context;
 
     @BeforeEach
     void before() {
+//        DemoServer server = context.getBean(DemoServer.class);
+//        server.run(null);
     }
 
     @Test
-    void testSignIn() {
-        FbSignIn signRequest = FbConverter.toSignIn(Account.builder().pid("testpid00002").build());
-        FbSignIn signResponse = (FbSignIn) FbMessage.getRootAsFbMessage(ByteBuffer.wrap(signInHandler.handle(signRequest, FbMethod.N))).payload(new FbSignIn());
-        System.out.println("uid : " + signResponse.uid());
+    void test1() throws IOException, InterruptedException {
+        InetSocketAddress hostAddress = new InetSocketAddress("localhost", 9999);
+        SocketChannel client = SocketChannel.open(hostAddress);
+
+        int count = 0;
+        while (count < 100) {
+            System.out.println("write msg count : " + count);
+            client.write(ByteBuffer.wrap(FbConverter.toChat("testcid", "testoid", "msg content" + count).getByteBuffer().array()));
+            Thread.sleep(500);
+            count++;
+        }
+
+        client.close();
     }
 
+
     @Test
-    void testCharacters() {
-        // sign in
-        FbSignIn signRequest = FbConverter.toSignIn(Account.builder().pid("testpid00002").build());
-        FbSignIn signResponse = (FbSignIn) FbMessage.getRootAsFbMessage(ByteBuffer.wrap(signInHandler.handle(signRequest, FbMethod.N))).payload(new FbSignIn());
-        System.out.println("uid : " + signResponse.uid());
+    void test() throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        TcpClient client = TcpClient.create().port(9999);
+        Connection conn = client.handle((in, out) -> {
+            in.receive().asByteArray().log("client").subscribe(bytes -> {
+                FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(bytes));
+                FbChat chat = (FbChat) message.payload(new FbChat());
+                System.out.println("chat : " + chat.content());
+                latch.countDown();
+            });
 
-        // before get characters
-        FbCharacter getCharacterRequest = FbConverter.toCharacter(Account.builder().id(signResponse.uid()).build());
-        FbCharacter getCharacterResponse = (FbCharacter) FbMessage.getRootAsFbMessage(ByteBuffer.wrap(characterHandler.handle(getCharacterRequest, FbMethod.R))).payload(new FbCharacter());
-        System.out.println("before length : " + getCharacterResponse.objectsLength());
+            return out.sendByteArray(Flux.just(
+                    FbConverter.toChat("testcid", "testoid", "msg content1").getByteBuffer().array(),
+                    FbConverter.toChat("testcid", "testoid", "msg content2").getByteBuffer().array(),
+                    FbConverter.toChat("testcid", "testoid", "msg content3").getByteBuffer().array(),
+                    FbConverter.toChat("testcid", "testoid", "msg content4").getByteBuffer().array(),
+                    FbConverter.toChat("testcid", "testoid", "msg content5").getByteBuffer().array()
+            )).then();
+        }).wiretap(true).connectNow();
 
-        // make character
-        FbCharacter makeCharacterRequest = FbConverter.toCharacter(Account.builder().id(signResponse.uid()).character(Character.builder().name("test0002").build()).build());
-        FbCharacter makeCharacterResponse = (FbCharacter) FbMessage.getRootAsFbMessage(ByteBuffer.wrap(characterHandler.handle(makeCharacterRequest, FbMethod.C))).payload(new FbCharacter());
-
-        // after get characters
-        FbCharacter afterCharacterRequest = FbConverter.toCharacter(Account.builder().id(signResponse.uid()).build());
-        FbCharacter afterCharacterResponse = (FbCharacter) FbMessage.getRootAsFbMessage(ByteBuffer.wrap(characterHandler.handle(afterCharacterRequest, FbMethod.R))).payload(new FbCharacter());
-        System.out.println("before length : " + afterCharacterResponse.objectsLength());
-        System.out.println(afterCharacterResponse.objects(0).oid());
+        assertTrue("Latch was counted down", latch.await(5, TimeUnit.SECONDS));
+        conn.disposeNow();
     }
 }
