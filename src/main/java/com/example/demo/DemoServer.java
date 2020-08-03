@@ -1,6 +1,7 @@
 package com.example.demo;
 
 import com.example.demo.model.RequestBean;
+import com.example.demo.util.ChannelManager;
 import com.example.demo.util.FbDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,19 +23,22 @@ public class DemoServer implements ApplicationRunner {
     @Autowired
     Dispatcher dispatcher;
 
+    @Autowired
+    ChannelManager channelManager;
+
     @Override
     public void run(ApplicationArguments args) {
         TcpServer.create()
                 .port(9999)
                 .doOnConnection(conn -> {
-                    logger.info("conn channel id : {}", conn.channel().id());
+                    channelManager.addChannel(conn.channel());
                     conn.addHandler(new FbDecoder());
                 })
                 .handle((inbound, outbound) -> outbound.sendByteArray(
                         inbound.receiveObject()
                                 .ofType(RequestBean.class)
-                                .log("request")
-                                .doOnCancel(() -> logger.info("on cancel"))
+                                .log("server request")
+                                .doOnCancel(() -> logger.info("current channels size : {}", channelManager.getSize()))
                                 .doOnError(throwable -> logger.info("on error : {}", throwable.getLocalizedMessage()))
                                 .flatMap(request -> dispatcher.handle(request))
                         )

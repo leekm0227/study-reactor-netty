@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -27,15 +28,39 @@ class DemoApplicationTests {
     }
 
     @Test
+    void testCid(){
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+    @Test
     void testSocket() throws IOException, InterruptedException {
         InetSocketAddress hostAddress = new InetSocketAddress("localhost", 9999);
         SocketChannel client = SocketChannel.open(hostAddress);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
 
         int count = 0;
-        while (count < 100) {
+        while (count < 5) {
             System.out.println("write msg count : " + count);
             client.write(ByteBuffer.wrap(FbConverter.toChat("testcid", "testoid", "msg content" + count).getByteBuffer().array()));
-            Thread.sleep(500);
+            client.read(byteBuffer);
+
+            byteBuffer.flip();
+            FbMessage message = FbMessage.getRootAsFbMessage(byteBuffer);
+            FbChat receiveChat = (FbChat) message.payload(new FbChat());
+
+            if (receiveChat != null) System.out.println("receive msg : " + receiveChat.content());
+
+            Thread.sleep(100);
             count++;
         }
 
@@ -66,4 +91,10 @@ class DemoApplicationTests {
         assertTrue("Latch was counted down", latch.await(5, TimeUnit.SECONDS));
         conn.disposeNow();
     }
+
+
+
+
+
+
 }

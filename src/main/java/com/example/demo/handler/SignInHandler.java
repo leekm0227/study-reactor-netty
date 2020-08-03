@@ -24,7 +24,7 @@ public class SignInHandler extends AbstractHandler<FbSignIn> {
     }
 
     @Override
-    public byte[] handle(FbSignIn request, byte method) {
+    public byte[] handle(String sid, FbSignIn request, byte method) {
         Optional<Account> account = accountRepository.findByPid(request.pid());
 
         Account response = account.orElseGet(() -> accountRepository.save(

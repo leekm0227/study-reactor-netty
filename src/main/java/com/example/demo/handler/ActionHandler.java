@@ -22,7 +22,7 @@ public class ActionHandler extends AbstractHandler<FbAction> {
     }
 
     @Override
-    public byte[] handle(FbAction action, byte method) {
+    public byte[] handle(String sid, FbAction action, byte method) {
         System.out.println("action handler state : " + FbState.name(action.object().state()));
 
         switch (action.object().state()) {

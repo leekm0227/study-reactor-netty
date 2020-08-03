@@ -44,21 +44,21 @@ class DemoApplicationApiTests {
 
     @Test
     void testChat() {
-        chatPublisher.subscribe("test").subscribe(bytes -> {
-            FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(bytes));
-            FbChat chat = (FbChat) message.payload(new FbChat());
-            System.out.println("test1 : " + chat.content());
-        });
-
-        chatPublisher.subscribe("test").subscribe(bytes -> {
-            FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(bytes));
-            FbChat chat = (FbChat) message.payload(new FbChat());
-            System.out.println("test2 : " + chat.content());
-        });
-
-        for (int i = 0; i < 100; i++) {
-            chatPublisher.onNext(FbConverter.toChat("testcid", "testoid" + i, "msg content" + i));
-        }
+//        chatPublisher.subscribe().subscribe(bytes -> {
+//            FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(bytes));
+//            FbChat chat = (FbChat) message.payload(new FbChat());
+//            System.out.println("test1 : " + chat.content());
+//        });
+//
+//        chatPublisher.subscribe("test").subscribe(bytes -> {
+//            FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(bytes));
+//            FbChat chat = (FbChat) message.payload(new FbChat());
+//            System.out.println("test2 : " + chat.content());
+//        });
+//
+//        for (int i = 0; i < 100; i++) {
+//            chatPublisher.onNext(FbConverter.toChat("testcid", "testoid" + i, "msg content" + i));
+//        }
     }
 
     @Test
@@ -78,7 +78,7 @@ class DemoApplicationApiTests {
     @Test
     void testSignIn() {
         FbSignIn signRequest = FbConverter.toSignIn(Account.builder().pid("testpid00002").build());
-        FbSignIn signResponse = (FbSignIn) FbMessage.getRootAsFbMessage(ByteBuffer.wrap(signInHandler.handle(signRequest, FbMethod.N))).payload(new FbSignIn());
+        FbSignIn signResponse = (FbSignIn) FbMessage.getRootAsFbMessage(ByteBuffer.wrap(signInHandler.handle("testsid", signRequest, FbMethod.N))).payload(new FbSignIn());
         System.out.println("uid : " + signResponse.uid());
     }
 
@@ -86,21 +86,21 @@ class DemoApplicationApiTests {
     void testCharacters() {
         // sign in
         FbSignIn signRequest = FbConverter.toSignIn(Account.builder().pid("testpid00002").build());
-        FbSignIn signResponse = (FbSignIn) FbMessage.getRootAsFbMessage(ByteBuffer.wrap(signInHandler.handle(signRequest, FbMethod.N))).payload(new FbSignIn());
+        FbSignIn signResponse = (FbSignIn) FbMessage.getRootAsFbMessage(ByteBuffer.wrap(signInHandler.handle("testsid", signRequest, FbMethod.N))).payload(new FbSignIn());
         System.out.println("uid : " + signResponse.uid());
 
         // before get characters
         FbCharacter getCharacterRequest = FbConverter.toCharacter(Account.builder().id(signResponse.uid()).build());
-        FbCharacter getCharacterResponse = (FbCharacter) FbMessage.getRootAsFbMessage(ByteBuffer.wrap(characterHandler.handle(getCharacterRequest, FbMethod.R))).payload(new FbCharacter());
+        FbCharacter getCharacterResponse = (FbCharacter) FbMessage.getRootAsFbMessage(ByteBuffer.wrap(characterHandler.handle("testsid", getCharacterRequest, FbMethod.R))).payload(new FbCharacter());
         System.out.println("before length : " + getCharacterResponse.objectsLength());
 
         // make character
         FbCharacter makeCharacterRequest = FbConverter.toCharacter(Account.builder().id(signResponse.uid()).character(Character.builder().name("test0002").build()).build());
-        FbCharacter makeCharacterResponse = (FbCharacter) FbMessage.getRootAsFbMessage(ByteBuffer.wrap(characterHandler.handle(makeCharacterRequest, FbMethod.C))).payload(new FbCharacter());
+        FbCharacter makeCharacterResponse = (FbCharacter) FbMessage.getRootAsFbMessage(ByteBuffer.wrap(characterHandler.handle("testsid", makeCharacterRequest, FbMethod.C))).payload(new FbCharacter());
 
         // after get characters
         FbCharacter afterCharacterRequest = FbConverter.toCharacter(Account.builder().id(signResponse.uid()).build());
-        FbCharacter afterCharacterResponse = (FbCharacter) FbMessage.getRootAsFbMessage(ByteBuffer.wrap(characterHandler.handle(afterCharacterRequest, FbMethod.R))).payload(new FbCharacter());
+        FbCharacter afterCharacterResponse = (FbCharacter) FbMessage.getRootAsFbMessage(ByteBuffer.wrap(characterHandler.handle("testsid", afterCharacterRequest, FbMethod.R))).payload(new FbCharacter());
         System.out.println("before length : " + afterCharacterResponse.objectsLength());
         System.out.println(afterCharacterResponse.objects(0).oid());
     }

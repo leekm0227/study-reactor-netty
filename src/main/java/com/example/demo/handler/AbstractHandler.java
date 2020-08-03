@@ -19,7 +19,9 @@ public abstract class AbstractHandler<T extends Table> implements Handler<T> {
 
     public byte[] handle(RequestBean req) {
         try {
-            return handle((T) req.getMessage().payload(cls.newInstance()), req.getMessage().method());
+            return handle(req.getSid(),
+                    (T) req.getMessage().payload(cls.newInstance()),
+                    req.getMessage().method());
         } catch (Exception e) {
             e.printStackTrace();
         }

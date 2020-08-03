@@ -29,7 +29,7 @@ public class CharacterHandler extends AbstractHandler<FbCharacter> {
     }
 
     @Override
-    public byte[] handle(FbCharacter request, byte method) {
+    public byte[] handle(String sid, FbCharacter request, byte method) {
         Optional<Account> account = accountRepository.findById(Objects.requireNonNull(request.uid()));
 
         if (account.isPresent()) {
