@@ -28,7 +28,7 @@ public class ChatPublisher {
         chatPublisher.onNext(chat);
     }
 
-    public Flux<byte[]> subscribe(String sid) {
-        return chatFlux.map(chat -> channelManager.readable(sid, chat.cid()) ? chat.getByteBuffer().array() : new byte[0]);
+    public Flux<byte[]> subscribe(int hash) {
+        return chatFlux.map(chat -> channelManager.readable(hash, chat.cid()) ? chat.getByteBuffer().array() : new byte[0]);
     }
 }

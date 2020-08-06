@@ -1,100 +1,129 @@
 package com.example.demo;
 
 
-import com.example.demo.flatbuffer.FbChat;
 import com.example.demo.flatbuffer.FbMessage;
 import com.example.demo.util.FbConverter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.Flux;
-import reactor.netty.Connection;
-import reactor.netty.tcp.TcpClient;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
-import java.util.Objects;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import static org.springframework.test.util.AssertionErrors.assertTrue;
+import java.nio.channels.AsynchronousChannelGroup;
+import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 
 class DemoApplicationTests {
 
+    final static String HOST = "127.0.0.1";
+    final static int PORT = 9999;
+    AsynchronousChannelGroup channelGroup;
+
     @BeforeEach
-    void before() {
+    void before() throws IOException {
+        channelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), Executors.defaultThreadFactory());
     }
 
     @Test
-    void testCid(){
+    void testCid() throws IOException, InterruptedException {
+        testClient test1 = new testClient(channelGroup, buffer -> {
+//            System.out.println("===== receive1");
+//            FbMessage message = FbMessage.getRootAsFbMessage(buffer);
+//
+//            if (message != null) {
+//                System.out.println("===== receive1 : " + message.payloadType());
+//            }
+        });
 
-    }
+        testClient test2 = new testClient(channelGroup, buffer -> {
+            FbMessage message = FbMessage.getRootAsFbMessage(buffer);
 
+            if (message != null) {
+                System.out.println("===== receive2 : " + message.payloadType());
+            }
+        });
 
-
-
-
-
-
-
-
-
-
-    @Test
-    void testSocket() throws IOException, InterruptedException {
-        InetSocketAddress hostAddress = new InetSocketAddress("localhost", 9999);
-        SocketChannel client = SocketChannel.open(hostAddress);
-        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        test1.connect();
+        test2.connect();
 
         int count = 0;
         while (count < 5) {
-            System.out.println("write msg count : " + count);
-            client.write(ByteBuffer.wrap(FbConverter.toChat("testcid", "testoid", "msg content" + count).getByteBuffer().array()));
-            client.read(byteBuffer);
-
-            byteBuffer.flip();
-            FbMessage message = FbMessage.getRootAsFbMessage(byteBuffer);
-            FbChat receiveChat = (FbChat) message.payload(new FbChat());
-
-            if (receiveChat != null) System.out.println("receive msg : " + receiveChat.content());
-
-            Thread.sleep(100);
+            test1.send(ByteBuffer.wrap(FbConverter.toChat("notice", "testoid", "msg content").getByteBuffer().array()));
+            Thread.sleep(1000);
             count++;
         }
 
-        client.close();
+        channelGroup.shutdown();
     }
 
-    @Test
-    void testTcpClient() throws InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(1);
-        TcpClient client = TcpClient.create().port(9999);
-        Connection conn = client.handle((in, out) -> {
-            in.receive().asByteArray().log("client").subscribe(bytes -> {
-                FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(bytes));
-                FbChat chat = (FbChat) message.payload(new FbChat());
-                System.out.println("chat : " + chat.content());
-                latch.countDown();
+    public static class testClient {
+        private final AsynchronousSocketChannel socketChannel;
+        private final ByteBuffer byteBuffer;
+        private final Consumer<ByteBuffer> consumer;
+
+        testClient(AsynchronousChannelGroup channelGroup, Consumer<ByteBuffer> consumer) throws IOException {
+            this.socketChannel = AsynchronousSocketChannel.open(channelGroup);
+            this.byteBuffer = ByteBuffer.allocate(1024);
+            this.consumer = consumer;
+        }
+
+        void connect() {
+            socketChannel.connect(new InetSocketAddress(HOST, PORT), null, new CompletionHandler<Void, Void>() {
+                @Override
+                public void completed(Void result, Void attachment) {
+                    socketChannel.read(byteBuffer, byteBuffer, new CompletionHandler<Integer, ByteBuffer>() {
+                        @Override
+                        public void completed(Integer result, ByteBuffer attachment) {
+                            attachment.flip();
+                            consumer.accept(attachment);
+                            byteBuffer.clear();
+
+                            if (socketChannel.isOpen()) {
+                                socketChannel.read(byteBuffer, byteBuffer, this);
+                            }
+                        }
+
+                        @Override
+                        public void failed(Throwable e, ByteBuffer attachment) {
+                            close();
+                        }
+                    });
+                }
+
+                @Override
+                public void failed(Throwable e, Void attachment) {
+                    System.out.println("connect failed : " + e.getLocalizedMessage());
+                }
             });
+        }
 
-            return out.sendByteArray(Flux.just(
-                    FbConverter.toChat("testcid", "testoid", "msg content1").getByteBuffer().array(),
-                    FbConverter.toChat("testcid", "testoid", "msg content2").getByteBuffer().array(),
-                    FbConverter.toChat("testcid", "testoid", "msg content3").getByteBuffer().array(),
-                    FbConverter.toChat("testcid", "testoid", "msg content4").getByteBuffer().array(),
-                    FbConverter.toChat("testcid", "testoid", "msg content5").getByteBuffer().array()
-            )).then();
-        }).wiretap(true).connectNow();
+        void send(ByteBuffer byteBuffer) {
+            if (socketChannel.isOpen()) {
+                socketChannel.write(byteBuffer, null, new CompletionHandler<Integer, Void>() {
+                    @Override
+                    public void completed(Integer result, Void attachment) {
+                        System.out.println("===== send size : " + byteBuffer.position());
+                    }
 
-        assertTrue("Latch was counted down", latch.await(5, TimeUnit.SECONDS));
-        conn.disposeNow();
+                    @Override
+                    public void failed(Throwable e, Void attachment) {
+                        System.out.println("send failed : " + e.getLocalizedMessage());
+                    }
+                });
+            }
+        }
+
+        void close() {
+            if (socketChannel.isOpen()) {
+                try {
+                    socketChannel.close();
+                } catch (IOException ignored) {
+                    // ignored
+                }
+            }
+        }
     }
-
-
-
-
-
-
 }

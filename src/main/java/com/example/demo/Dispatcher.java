@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
+import reactor.netty.NettyInbound;
 
 import javax.annotation.PostConstruct;
 import java.util.HashMap;
@@ -35,10 +36,8 @@ public class Dispatcher {
         handlers.put(bodyType, handler);
     }
 
-    Flux<byte[]> handle(RequestBean req) {
+    byte[] handle(RequestBean req) {
         AbstractHandler<?> handler = handlers.get(req.getMessage().payloadType());
-        return Flux.just(handler.handle(req))
-                .mergeWith(chatPublisher.subscribe(req.getSid()))
-                .mergeWith(fieldPublisher.subscribe());
+        return handler.handle(req);
     }
 }
