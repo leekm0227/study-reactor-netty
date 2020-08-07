@@ -33,9 +33,8 @@ public class ActionHandler extends AbstractHandler<FbAction> {
 
                 break;
             case FbState.I:
-                break;
             case FbState.M:
-                fieldPublisher.move(action.object());
+                fieldPublisher.update(action.object());
                 break;
             case FbState.S:
                 fieldPublisher.spawn(action.object());

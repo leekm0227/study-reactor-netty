@@ -8,6 +8,7 @@ import com.example.demo.model.ObjectBean;
 import com.google.flatbuffers.FlatBufferBuilder;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Optional;
 
 public final class FbConverter {
@@ -36,7 +37,7 @@ public final class FbConverter {
         int messageOffset = FbMessage.createFbMessage(builder, FbMethod.N, FbResult.S, FbPayload.FbField, fieldOffset);
         builder.finish(messageOffset);
 
-        FbMessage message = FbMessage.getRootAsFbMessage(builder.dataBuffer());
+        FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(builder.sizedByteArray()));
         return (FbField) message.payload(new FbField());
     }
 
@@ -92,6 +93,24 @@ public final class FbConverter {
 
         FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(builder.sizedByteArray()));
         return (FbChat) message.payload(new FbChat());
+    }
 
+    public static FbAction toAction(Character character, byte state) {
+        FlatBufferBuilder builder = new FlatBufferBuilder();
+        int oid = builder.createString(Optional.ofNullable(character.getId()).orElse(""));
+        int name = builder.createString(Optional.ofNullable(character.getName()).orElse(""));
+        FbObject.startFbObject(builder);
+        FbObject.addOid(builder, oid);
+        FbObject.addName(builder, name);
+        FbObject.addPos(builder, FbVec3.createFbVec3(builder, character.getPos(Const.X), character.getPos(Const.Y), character.getPos(Const.Z)));
+        FbObject.addState(builder, state);
+        FbObject.addType(builder, FbType.P);
+        int objectOffset = FbObject.endFbObject(builder);
+        int actionOffset = FbAction.createFbAction(builder, objectOffset);
+        int messageOffset = FbMessage.createFbMessage(builder, FbMethod.N, FbResult.S, FbPayload.FbAction, actionOffset);
+        builder.finish(messageOffset);
+
+        FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(builder.sizedByteArray()));
+        return (FbAction) message.payload(new FbAction());
     }
 }

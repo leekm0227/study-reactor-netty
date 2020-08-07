@@ -21,7 +21,6 @@ public class FieldPublisher {
     private Flux<FieldBean> fieldFlux;
     private FieldBean lastField;
 
-
     @PostConstruct
     public void init() {
         fieldPublisher = UnicastProcessor.create();
@@ -30,7 +29,7 @@ public class FieldPublisher {
     }
 
     public void onNext(FieldBean fieldBean) {
-        System.out.println("field : " + fieldBean);
+        System.out.println("updated field : " + fieldBean);
         lastField = fieldBean;
         fieldPublisher.onNext(fieldBean);
     }
@@ -62,7 +61,9 @@ public class FieldPublisher {
         this.onNext(lastField);
     }
 
-    public void move(FbObject object) {
+    public void update(FbObject object) {
+        System.out.println("obj name : " + object.name());
+
         lastField.getObjects().stream().filter(x -> x.getOid().equals(object.oid())).forEach(objectBean -> {
             objectBean.setState(object.state());
             objectBean.setPos(new float[]{object.pos().x(), object.pos().y(), object.pos().z()});

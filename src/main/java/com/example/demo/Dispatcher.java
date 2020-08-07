@@ -18,13 +18,6 @@ import java.util.HashMap;
 public class Dispatcher {
 
     private static final Logger logger = LoggerFactory.getLogger(Dispatcher.class);
-
-    @Autowired
-    ChatPublisher chatPublisher;
-
-    @Autowired
-    FieldPublisher fieldPublisher;
-
     private HashMap<Byte, AbstractHandler<?>> handlers;
 
     @PostConstruct

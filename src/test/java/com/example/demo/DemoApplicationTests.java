@@ -1,8 +1,12 @@
 package com.example.demo;
 
 
-import com.example.demo.flatbuffer.FbMessage;
+import com.example.demo.domain.Account;
+import com.example.demo.domain.Character;
+import com.example.demo.flatbuffer.*;
+import com.example.demo.util.Const;
 import com.example.demo.util.FbConverter;
+import com.google.flatbuffers.FlatBufferBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +16,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
@@ -28,14 +35,46 @@ class DemoApplicationTests {
     }
 
     @Test
+    void testField() throws IOException, InterruptedException {
+        Character character = Character.builder()
+                .id("testId0001")
+                .name("testName0001")
+                .build();
+
+        testClient client = new testClient(channelGroup, buffer -> {
+            FbMessage message = FbMessage.getRootAsFbMessage(buffer);
+
+            if (message != null) {
+                System.out.println("payload type : " + message.payloadType());
+                if (message.payloadType() == FbPayload.FbField) {
+                    FbField field = (FbField) message.payload(new FbField());
+                    for (int i = 0; i < Objects.requireNonNull(field).objectsLength(); i++) {
+                        System.out.println(String.format("name : {}, pos : [{}, {}, {}]",
+                                field.objects(i).name(),
+                                field.objects(i).pos().x(),
+                                field.objects(i).pos().y(),
+                                field.objects(i).pos().z()
+                        ));
+                    }
+                }
+            }
+        });
+
+        client.connect();
+        client.send(ByteBuffer.wrap(FbConverter.toAction(character, FbState.S).getByteBuffer().array()));
+        Thread.sleep(100000);
+        channelGroup.shutdown();
+    }
+
+
+    @Test
     void testCid() throws IOException, InterruptedException {
         testClient test1 = new testClient(channelGroup, buffer -> {
-//            System.out.println("===== receive1");
-//            FbMessage message = FbMessage.getRootAsFbMessage(buffer);
-//
-//            if (message != null) {
-//                System.out.println("===== receive1 : " + message.payloadType());
-//            }
+            FbMessage message = FbMessage.getRootAsFbMessage(buffer);
+
+            if (message != null) {
+                System.out.println("===== receive1 : " + message.payloadType());
+            }
         });
 
         testClient test2 = new testClient(channelGroup, buffer -> {
@@ -51,7 +90,7 @@ class DemoApplicationTests {
 
         int count = 0;
         while (count < 5) {
-            test1.send(ByteBuffer.wrap(FbConverter.toChat("notice", "testoid", "msg content").getByteBuffer().array()));
+            test1.send(ByteBuffer.wrap(FbConverter.toChat(Const.TOPIC_NOTICE, "testoid", "msg content").getByteBuffer().array()));
             Thread.sleep(1000);
             count++;
         }
@@ -59,7 +98,7 @@ class DemoApplicationTests {
         channelGroup.shutdown();
     }
 
-    public static class testClient {
+    private static class testClient {
         private final AsynchronousSocketChannel socketChannel;
         private final ByteBuffer byteBuffer;
         private final Consumer<ByteBuffer> consumer;

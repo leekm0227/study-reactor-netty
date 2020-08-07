@@ -17,10 +17,10 @@ public class ChannelManager {
 
     private static final Logger logger = LoggerFactory.getLogger(ChannelManager.class);
     final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-    final ConcurrentMap<Integer, String> cidMap = new ConcurrentHashMap<>();
+    final ConcurrentMap<Integer, String> connMap = new ConcurrentHashMap<>();
 
     public void onConnect(Connection conn) {
-        cidMap.put(conn.hashCode(), conn.channel().id().toString());
+        connMap.put(conn.hashCode(), conn.channel().id().toString());
         conn.channel().attr(AttributeKey.valueOf(Const.TOPIC_NOTICE));
         conn.channel().attr(AttributeKey.valueOf(conn.channel().id().toString()));
         channels.add(conn.channel());
@@ -31,7 +31,7 @@ public class ChannelManager {
     }
 
     public boolean readable(int hash, String cid) {
-        return channels.stream().anyMatch(value -> value.id().toString().equals(cidMap.getOrDefault(hash, "")) && value.hasAttr(AttributeKey.valueOf(cid)));
+        return channels.stream().anyMatch(value -> value.id().toString().equals(connMap.getOrDefault(hash, "")) && value.hasAttr(AttributeKey.valueOf(cid)));
     }
 
     public void join(String sid, String cid) {

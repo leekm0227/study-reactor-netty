@@ -46,7 +46,6 @@ public class DemoServer implements ApplicationRunner {
                     channelManager.onConnect(conn);
                     conn.addHandler(new FbDecoder());
                 })
-                .wiretap(true)
                 .handle((inbound, outbound) -> outbound.sendByteArray(
                         inbound.receiveObject()
                                 .ofType(RequestBean.class)
@@ -57,6 +56,7 @@ public class DemoServer implements ApplicationRunner {
                                 .mergeWith(chatPublisher.subscribe(inbound.hashCode()))
                                 .mergeWith(fieldPublisher.subscribe()))
                 )
+                .wiretap(true)
                 .bindUntilJavaShutdown(Duration.ofSeconds(30), null);
     }
 }
