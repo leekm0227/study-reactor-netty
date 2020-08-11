@@ -64,7 +64,7 @@ class DemoApplicationTests {
         });
 
         client.connect();
-        client.send(ByteBuffer.wrap(FbConverter.toAction(character, FbState.D).getByteBuffer().array()));
+        client.send(ByteBuffer.wrap(FbConverter.toAction(character, FbState.D)));
         Thread.sleep(1000);
 
         int i = 0;
@@ -75,7 +75,7 @@ class DemoApplicationTests {
             int y = random.nextInt(length) - length / 2;
             character.setPos(Const.X, x);
             character.setPos(Const.Y, y);
-            client.send(ByteBuffer.wrap(FbConverter.toAction(character, FbState.D).getByteBuffer().array()));
+            client.send(ByteBuffer.wrap(FbConverter.toAction(character, FbState.D)));
             Thread.sleep(50);
             i++;
         }
@@ -92,12 +92,7 @@ class DemoApplicationTests {
         int count = 0;
         while (count < 1000) {
             testClients.forEach(testClient -> {
-                testClient.send(ByteBuffer.wrap(FbConverter.toChat(Const.TOPIC_NOTICE, "testoid", "msg content").getByteBuffer().array()));
-//                try {
-//                    Thread.sleep(20);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
+                testClient.send(ByteBuffer.wrap(FbConverter.toChat(Const.TOPIC_NOTICE, "testoid", "msg content")));
             });
             Thread.sleep(50);
             count++;
@@ -115,7 +110,7 @@ class DemoApplicationTests {
                 FbMessage message = FbMessage.getRootAsFbMessage(buffer);
 
                 if (message != null) {
-                    System.out.println("===== receive" + finalI + " payload type : " + message.payloadType() + ", receve count : " + receiveCount.incrementAndGet());
+                    System.out.println("===== receive" + finalI + " payload : " + FbPayload.name(message.payloadType()) + ", receive count : " + receiveCount.incrementAndGet());
                 }
             }));
         }

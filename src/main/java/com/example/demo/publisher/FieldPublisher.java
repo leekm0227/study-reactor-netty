@@ -33,18 +33,12 @@ public class FieldPublisher {
     }
 
     public void onNext(FieldBean fieldBean) {
-        logger.info("updated field : {}", fieldBean);
         lastField = fieldBean;
         fieldPublisher.onNext(fieldBean);
-        logger.info("pub count : {}", fieldPublisher.count());
-        logger.info("pub size : {}", fieldPublisher.size());
     }
 
     public Flux<byte[]> subscribe() {
-        return fieldFlux.map(fieldBean -> {
-            logger.info("subscribe : {}", fieldBean.toString());
-            return FbConverter.toField(fieldBean).getByteBuffer().array();
-        });
+        return fieldFlux.map(FbConverter::toField);
     }
 
     void initField() {
@@ -76,7 +70,6 @@ public class FieldPublisher {
     }
 
     public void update(FbObject object) {
-        logger.info("========== update");
         FieldBean fieldBean = getLastField();
         fieldBean.getObjects().stream()
                 .filter(x -> x.getOid().equals(object.oid()))

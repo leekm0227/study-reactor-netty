@@ -2,6 +2,7 @@ package com.example.demo.publisher;
 
 import com.example.demo.flatbuffer.FbChat;
 import com.example.demo.util.ChannelManager;
+import com.example.demo.util.FbConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +21,7 @@ public class ChatPublisher {
 
     private AtomicInteger count = new AtomicInteger(0);
     private static final Logger logger = LoggerFactory.getLogger(ChatPublisher.class);
-    private UnicastProcessor<FbChat> chatPublisher;
+    public UnicastProcessor<FbChat> chatPublisher;
     public Flux<FbChat> chatFlux;
 
     @PostConstruct
@@ -31,11 +32,9 @@ public class ChatPublisher {
 
     public void onNext(FbChat chat) {
         chatPublisher.onNext(chat);
-        logger.info("on next count : {}", count.incrementAndGet());
     }
 
     public Flux<byte[]> subscribe(int hash) {
-//        return chatFlux.map(chat -> channelManager.readable(hash, chat.cid()) ? chat.getByteBuffer().array() : new byte[0]);
-        return chatFlux.map(chat -> chat.getByteBuffer().array());
+        return chatFlux.map(chat -> channelManager.readable(hash, chat.cid()) ? chat.getByteBuffer().array() : FbConverter.toEmpty());
     }
 }

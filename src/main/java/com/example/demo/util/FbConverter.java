@@ -8,12 +8,18 @@ import com.example.demo.model.ObjectBean;
 import com.google.flatbuffers.FlatBufferBuilder;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Optional;
 
 public final class FbConverter {
 
-    public static FbField toField(FieldBean fieldBean) {
+    public static byte[] toEmpty() {
+        FlatBufferBuilder builder = new FlatBufferBuilder();
+        builder.finish(FbMessage.createFbMessage(builder, FbMethod.N, FbResult.S, FbPayload.NONE, 0));
+
+        return builder.sizedByteArray();
+    }
+
+    public static byte[] toField(FieldBean fieldBean) {
         FlatBufferBuilder builder = new FlatBufferBuilder();
         int[] arrObject = new int[fieldBean.getObjects().size()];
 
@@ -37,11 +43,10 @@ public final class FbConverter {
         int messageOffset = FbMessage.createFbMessage(builder, FbMethod.N, FbResult.S, FbPayload.FbField, fieldOffset);
         builder.finish(messageOffset);
 
-        FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(builder.sizedByteArray()));
-        return (FbField) message.payload(new FbField());
+        return builder.sizedByteArray();
     }
 
-    public static FbSignIn toSignIn(Account account) {
+    public static byte[] toSignIn(Account account) {
         FlatBufferBuilder builder = new FlatBufferBuilder();
         int pid = builder.createString(Optional.ofNullable(account.getPid()).orElse(""));
         int uid = builder.createString(Optional.ofNullable(account.getId()).orElse(""));
@@ -49,11 +54,10 @@ public final class FbConverter {
         int messageOffset = FbMessage.createFbMessage(builder, FbMethod.N, FbResult.S, FbPayload.FbSignIn, signInOffset);
         builder.finish(messageOffset);
 
-        FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(builder.sizedByteArray()));
-        return (FbSignIn) message.payload(new FbSignIn());
+        return builder.sizedByteArray();
     }
 
-    public static FbCharacter toCharacter(Account account) {
+    public static byte[] toCharacter(Account account) {
         FlatBufferBuilder builder = new FlatBufferBuilder();
         int[] arrChar = new int[account.getCharacters().size()];
 
@@ -78,11 +82,10 @@ public final class FbConverter {
         int messageOffset = FbMessage.createFbMessage(builder, FbMethod.N, FbResult.S, FbPayload.FbCharacter, signInOffset);
         builder.finish(messageOffset);
 
-        FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(builder.sizedByteArray()));
-        return (FbCharacter) message.payload(new FbCharacter());
+        return builder.sizedByteArray();
     }
 
-    public static FbChat toChat(String cid, String oid, String content) {
+    public static byte[] toChat(String cid, String oid, String content) {
         FlatBufferBuilder builder = new FlatBufferBuilder();
         int cidOffset = builder.createString(cid);
         int oidOffset = builder.createString(oid);
@@ -91,11 +94,10 @@ public final class FbConverter {
         int messageOffset = FbMessage.createFbMessage(builder, FbMethod.N, FbResult.S, FbPayload.FbChat, chatOffset);
         builder.finish(messageOffset);
 
-        FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(builder.sizedByteArray()));
-        return (FbChat) message.payload(new FbChat());
+        return builder.sizedByteArray();
     }
 
-    public static FbAction toAction(Character character, byte state) {
+    public static byte[] toAction(Character character, byte state) {
         FlatBufferBuilder builder = new FlatBufferBuilder();
         int oid = builder.createString(Optional.ofNullable(character.getId()).orElse(""));
         int name = builder.createString(Optional.ofNullable(character.getName()).orElse(""));
@@ -110,7 +112,6 @@ public final class FbConverter {
         int messageOffset = FbMessage.createFbMessage(builder, FbMethod.N, FbResult.S, FbPayload.FbAction, actionOffset);
         builder.finish(messageOffset);
 
-        FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(builder.sizedByteArray()));
-        return (FbAction) message.payload(new FbAction());
+        return builder.sizedByteArray();
     }
 }

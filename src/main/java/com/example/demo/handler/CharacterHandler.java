@@ -39,7 +39,7 @@ public class CharacterHandler extends AbstractHandler<FbCharacter> {
                 case FbMethod.D:
                     return delCharacter(account.get(), request.objects(0));
                 case FbMethod.R:
-                    return FbConverter.toCharacter(account.get()).getByteBuffer().array();
+                    return FbConverter.toCharacter(account.get());
             }
         }
 
@@ -53,7 +53,7 @@ public class CharacterHandler extends AbstractHandler<FbCharacter> {
                     .build());
 
             Account savedAccount = accountRepository.save(account);
-            return FbConverter.toCharacter(savedAccount).getByteBuffer().array();
+            return FbConverter.toCharacter(savedAccount);
         }
 
         return empty();
@@ -65,7 +65,7 @@ public class CharacterHandler extends AbstractHandler<FbCharacter> {
         if (target.isPresent()) {
             account.getCharacters().remove(target.get());
             Account savedAccount = accountRepository.save(account);
-            return FbConverter.toCharacter(savedAccount).getByteBuffer().array();
+            return FbConverter.toCharacter(savedAccount);
         }
 
         return empty();

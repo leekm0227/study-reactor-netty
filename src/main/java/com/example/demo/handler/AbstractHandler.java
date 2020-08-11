@@ -2,6 +2,7 @@ package com.example.demo.handler;
 
 import com.example.demo.Dispatcher;
 import com.example.demo.model.RequestBean;
+import com.example.demo.util.FbConverter;
 import com.google.flatbuffers.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,9 +20,11 @@ public abstract class AbstractHandler<T extends Table> implements Handler<T> {
 
     public byte[] handle(RequestBean req) {
         try {
-            return handle(req.getSid(),
+            return handle(
+                    req.getSid(),
                     (T) req.getMessage().payload(cls.newInstance()),
-                    req.getMessage().method());
+                    req.getMessage().method()
+            );
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -30,6 +33,6 @@ public abstract class AbstractHandler<T extends Table> implements Handler<T> {
     }
 
     public byte[] empty() {
-        return new byte[0];
+        return FbConverter.toEmpty();
     }
 }

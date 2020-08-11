@@ -3,13 +3,10 @@ package com.example.demo;
 import com.example.demo.handler.AbstractHandler;
 import com.example.demo.model.RequestBean;
 import com.example.demo.publisher.ChatPublisher;
-import com.example.demo.publisher.FieldPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
-import reactor.netty.NettyInbound;
 
 import javax.annotation.PostConstruct;
 import java.util.HashMap;
@@ -19,6 +16,9 @@ public class Dispatcher {
 
     private static final Logger logger = LoggerFactory.getLogger(Dispatcher.class);
     private HashMap<Byte, AbstractHandler<?>> handlers;
+
+    @Autowired
+    ChatPublisher chatPublisher;
 
     @PostConstruct
     public void init() {
@@ -31,7 +31,11 @@ public class Dispatcher {
 
     byte[] handle(RequestBean req) {
         AbstractHandler<?> handler = handlers.get(req.getMessage().payloadType());
-        logger.info("dispatcher : {}", req.getMessage());
+
+        if (handler == null) {
+            throw new RuntimeException();
+        }
+
         return handler.handle(req);
     }
 }

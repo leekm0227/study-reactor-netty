@@ -24,9 +24,7 @@ public class FbDecoder extends ByteToMessageDecoder {
         try {
             FbMessage message = FbMessage.getRootAsFbMessage(ByteBuffer.wrap(bytes));
             out.add(new RequestBean(ctx.channel().id().toString(), message));
-            logger.info("decoder : {}", message);
         } catch (Exception e) {
-            logger.info("msg exception : {}", e.getLocalizedMessage());
             throw new RuntimeException();
         }
     }
