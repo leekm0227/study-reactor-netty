@@ -1,12 +1,13 @@
 package com.example.demo;
 
 
-import com.example.demo.domain.Account;
 import com.example.demo.domain.Character;
-import com.example.demo.flatbuffer.*;
+import com.example.demo.flatbuffer.FbField;
+import com.example.demo.flatbuffer.FbMessage;
+import com.example.demo.flatbuffer.FbPayload;
+import com.example.demo.flatbuffer.FbState;
 import com.example.demo.util.Const;
 import com.example.demo.util.FbConverter;
-import com.google.flatbuffers.FlatBufferBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,10 +17,11 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 
@@ -27,6 +29,8 @@ class DemoApplicationTests {
 
     final static String HOST = "127.0.0.1";
     final static int PORT = 9999;
+    final AtomicInteger sendCount = new AtomicInteger(0);
+    final AtomicInteger receiveCount = new AtomicInteger(0);
     AsynchronousChannelGroup channelGroup;
 
     @BeforeEach
@@ -41,7 +45,7 @@ class DemoApplicationTests {
                 .name("testName0001")
                 .build();
 
-        testClient client = new testClient(channelGroup, buffer -> {
+        TestClient client = new TestClient(channelGroup, sendCount, buffer -> {
             FbMessage message = FbMessage.getRootAsFbMessage(buffer);
 
             if (message != null) {
@@ -49,11 +53,10 @@ class DemoApplicationTests {
                 if (message.payloadType() == FbPayload.FbField) {
                     FbField field = (FbField) message.payload(new FbField());
                     for (int i = 0; i < Objects.requireNonNull(field).objectsLength(); i++) {
-                        System.out.println(String.format("name : {}, pos : [{}, {}, {}]",
+                        System.out.println(String.format("name : %s, pos : [%2f, %2f]",
                                 field.objects(i).name(),
                                 field.objects(i).pos().x(),
-                                field.objects(i).pos().y(),
-                                field.objects(i).pos().z()
+                                field.objects(i).pos().y()
                         ));
                     }
                 }
@@ -61,52 +64,76 @@ class DemoApplicationTests {
         });
 
         client.connect();
-        client.send(ByteBuffer.wrap(FbConverter.toAction(character, FbState.S).getByteBuffer().array()));
-        Thread.sleep(100000);
+        client.send(ByteBuffer.wrap(FbConverter.toAction(character, FbState.D).getByteBuffer().array()));
+        Thread.sleep(1000);
+
+        int i = 0;
+        while (i < 5000) {
+            Random random = new Random();
+            int length = 10;
+            int x = random.nextInt(length) - length / 2;
+            int y = random.nextInt(length) - length / 2;
+            character.setPos(Const.X, x);
+            character.setPos(Const.Y, y);
+            client.send(ByteBuffer.wrap(FbConverter.toAction(character, FbState.D).getByteBuffer().array()));
+            Thread.sleep(50);
+            i++;
+        }
+
         channelGroup.shutdown();
     }
 
 
     @Test
     void testCid() throws IOException, InterruptedException {
-        testClient test1 = new testClient(channelGroup, buffer -> {
-            FbMessage message = FbMessage.getRootAsFbMessage(buffer);
-
-            if (message != null) {
-                System.out.println("===== receive1 : " + message.payloadType());
-            }
-        });
-
-        testClient test2 = new testClient(channelGroup, buffer -> {
-            FbMessage message = FbMessage.getRootAsFbMessage(buffer);
-
-            if (message != null) {
-                System.out.println("===== receive2 : " + message.payloadType());
-            }
-        });
-
-        test1.connect();
-        test2.connect();
+        ArrayList<TestClient> testClients = testClients(10);
+        testClients.forEach(TestClient::connect);
 
         int count = 0;
-        while (count < 5) {
-            test1.send(ByteBuffer.wrap(FbConverter.toChat(Const.TOPIC_NOTICE, "testoid", "msg content").getByteBuffer().array()));
-            Thread.sleep(1000);
+        while (count < 1000) {
+            testClients.forEach(testClient -> {
+                testClient.send(ByteBuffer.wrap(FbConverter.toChat(Const.TOPIC_NOTICE, "testoid", "msg content").getByteBuffer().array()));
+//                try {
+//                    Thread.sleep(20);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+            });
+            Thread.sleep(50);
             count++;
         }
 
+        Thread.sleep(50000);
         channelGroup.shutdown();
     }
 
-    private static class testClient {
+    private ArrayList<TestClient> testClients(int size) throws IOException {
+        ArrayList<TestClient> clients = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            int finalI = i;
+            clients.add(new TestClient(channelGroup, sendCount, buffer -> {
+                FbMessage message = FbMessage.getRootAsFbMessage(buffer);
+
+                if (message != null) {
+                    System.out.println("===== receive" + finalI + " payload type : " + message.payloadType() + ", receve count : " + receiveCount.incrementAndGet());
+                }
+            }));
+        }
+
+        return clients;
+    }
+
+    private static class TestClient {
         private final AsynchronousSocketChannel socketChannel;
         private final ByteBuffer byteBuffer;
         private final Consumer<ByteBuffer> consumer;
+        private final AtomicInteger sendCount;
 
-        testClient(AsynchronousChannelGroup channelGroup, Consumer<ByteBuffer> consumer) throws IOException {
+        TestClient(AsynchronousChannelGroup channelGroup, AtomicInteger counter, Consumer<ByteBuffer> consumer) throws IOException {
             this.socketChannel = AsynchronousSocketChannel.open(channelGroup);
             this.byteBuffer = ByteBuffer.allocate(1024);
             this.consumer = consumer;
+            this.sendCount = counter;
         }
 
         void connect() {
@@ -144,7 +171,7 @@ class DemoApplicationTests {
                 socketChannel.write(byteBuffer, null, new CompletionHandler<Integer, Void>() {
                     @Override
                     public void completed(Integer result, Void attachment) {
-                        System.out.println("===== send size : " + byteBuffer.position());
+                        System.out.println("===== send size : " + byteBuffer.position() + ", send count : " + sendCount.incrementAndGet());
                     }
 
                     @Override

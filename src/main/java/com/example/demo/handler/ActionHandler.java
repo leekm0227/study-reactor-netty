@@ -3,6 +3,7 @@ package com.example.demo.handler;
 import com.example.demo.flatbuffer.FbAction;
 import com.example.demo.flatbuffer.FbPayload;
 import com.example.demo.flatbuffer.FbState;
+import com.example.demo.model.FieldBean;
 import com.example.demo.publisher.FieldPublisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -23,14 +24,12 @@ public class ActionHandler extends AbstractHandler<FbAction> {
 
     @Override
     public byte[] handle(String sid, FbAction action, byte method) {
-        System.out.println("action handler state : " + FbState.name(action.object().state()));
-
         switch (action.object().state()) {
             case FbState.A:
 
                 break;
             case FbState.D:
-
+                fieldPublisher.onNext(new FieldBean());
                 break;
             case FbState.I:
             case FbState.M:

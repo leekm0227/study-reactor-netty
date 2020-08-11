@@ -55,7 +55,7 @@ public class ObjectBean extends AbstractBean {
         return this.pos[pos];
     }
 
-    public void setPos(int pos, int value) {
+    public void setPos(int pos, float value) {
         this.pos[pos] = value;
     }
 }

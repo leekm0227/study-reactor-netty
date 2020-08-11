@@ -31,6 +31,7 @@ public class Dispatcher {
 
     byte[] handle(RequestBean req) {
         AbstractHandler<?> handler = handlers.get(req.getMessage().payloadType());
+        logger.info("dispatcher : {}", req.getMessage());
         return handler.handle(req);
     }
 }

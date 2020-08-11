@@ -5,7 +5,10 @@ import com.example.demo.flatbuffer.FbState;
 import com.example.demo.flatbuffer.FbType;
 import com.example.demo.model.FieldBean;
 import com.example.demo.model.ObjectBean;
+import com.example.demo.util.Const;
 import com.example.demo.util.FbConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.UnicastProcessor;
@@ -17,6 +20,7 @@ import java.util.Random;
 @Component
 public class FieldPublisher {
 
+    private static final Logger logger = LoggerFactory.getLogger(FieldPublisher.class);
     private UnicastProcessor<FieldBean> fieldPublisher;
     private Flux<FieldBean> fieldFlux;
     private FieldBean lastField;
@@ -29,13 +33,18 @@ public class FieldPublisher {
     }
 
     public void onNext(FieldBean fieldBean) {
-        System.out.println("updated field : " + fieldBean);
+        logger.info("updated field : {}", fieldBean);
         lastField = fieldBean;
         fieldPublisher.onNext(fieldBean);
+        logger.info("pub count : {}", fieldPublisher.count());
+        logger.info("pub size : {}", fieldPublisher.size());
     }
 
     public Flux<byte[]> subscribe() {
-        return fieldFlux.map(fieldBean -> FbConverter.toField(fieldBean).getByteBuffer().array());
+        return fieldFlux.map(fieldBean -> {
+            logger.info("subscribe : {}", fieldBean.toString());
+            return FbConverter.toField(fieldBean).getByteBuffer().array();
+        });
     }
 
     void initField() {
@@ -49,8 +58,13 @@ public class FieldPublisher {
         }}));
     }
 
+    public FieldBean getLastField() {
+        return this.lastField;
+    }
+
     public void spawn(FbObject object) {
-        lastField.addObject(new ObjectBean(
+        FieldBean fieldBean = getLastField();
+        fieldBean.addObject(new ObjectBean(
                 object.oid(),
                 object.name(),
                 object.type(),
@@ -58,17 +72,21 @@ public class FieldPublisher {
                 new float[]{object.pos().x(), object.pos().y(), object.pos().z()}
         ));
 
-        this.onNext(lastField);
+        this.onNext(fieldBean);
     }
 
     public void update(FbObject object) {
-        System.out.println("obj name : " + object.name());
+        logger.info("========== update");
+        FieldBean fieldBean = getLastField();
+        fieldBean.getObjects().stream()
+                .filter(x -> x.getOid().equals(object.oid()))
+                .forEach(objectBean -> {
+                            objectBean.setState(object.state());
+                            objectBean.setPos(Const.X, object.pos().x());
+                            objectBean.setPos(Const.Y, object.pos().y());
+                        }
+                );
 
-        lastField.getObjects().stream().filter(x -> x.getOid().equals(object.oid())).forEach(objectBean -> {
-            objectBean.setState(object.state());
-            objectBean.setPos(new float[]{object.pos().x(), object.pos().y(), object.pos().z()});
-        });
-
-        this.onNext(lastField);
+        this.onNext(fieldBean);
     }
 }

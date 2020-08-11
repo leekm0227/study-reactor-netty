@@ -32,15 +32,14 @@ public class ChatHandler extends AbstractHandler<FbChat> {
     @Override
     public byte[] handle(String sid, FbChat chat, byte method) {
         switch (method) {
-            case FbMethod.C:
-                chatPublisher.onNext(chat);
             case FbMethod.D:
                 channelManager.leave(sid, chat.cid());
             case FbMethod.R:
                 channelManager.join(sid, chat.cid());
+            default:
+                chatPublisher.onNext(chat);
         }
 
-        chatPublisher.onNext(chat);
         return empty();
     }
 }
